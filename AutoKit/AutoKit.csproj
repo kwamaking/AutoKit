@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Version>1.0.0.0</Version>
+    <AssemblyName>Oxide.Ext.AutoKit</AssemblyName>
+    <Authors>kwamaking</Authors>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Oxide.Core">
+      <HintPath>../libs/Oxide.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Oxide.Rust">
+      <HintPath>../libs/Oxide.Rust.dll</HintPath>
+    </Reference>
+    <Reference Include="Oxide.CSharp">
+      <HintPath>../libs/Oxide.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Oxide.References">
+      <HintPath>../libs/Oxide.References.dll</HintPath>
+    </Reference>
+    <Reference Include="Oxide.Unity">
+      <HintPath>../libs/Oxide.Unity.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>../libs/Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Facepunch.UnityEngine">
+      <HintPath>../libs/Facepunch.UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>../libs/UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
