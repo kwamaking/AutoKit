@@ -72,6 +72,7 @@ namespace Oxide.Ext.AutoKit.Actions
             {
                 callBack( true );
                 Notify( configuration.messages.coolDown, coolDown );
+                return;
             }
             callBack( false );
         }
