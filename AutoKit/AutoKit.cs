@@ -12,7 +12,7 @@ namespace Oxide.Ext.AutoKit
     {
         private AutoKitConfiguration<T> configuration { get; set; }
         private List<PlayerAutoKit<T>> playerAutoKits { get; set; }
-        private object writeLock { get; set; } = new object();
+        private object readWriteLock { get; set; } = new object();
 
         public AutoKit( IAutoKitMessages messages, AutoKitSettings settings )
         {
@@ -20,11 +20,11 @@ namespace Oxide.Ext.AutoKit
             playerAutoKits = Load();
         }
 
-        public void With( BasePlayer player, Action<IAutoKitActions<T>> action )
+        public void With( BasePlayer player, Action<IAutoKitAction<T>> action )
         {
             try
             {
-                lock ( writeLock )
+                lock ( readWriteLock )
                 {
                     using ( var autoKitAction = new AutoKitAction<T>( configuration, player, playerAutoKits ) )
                     {
@@ -43,7 +43,7 @@ namespace Oxide.Ext.AutoKit
         {
             try
             {
-                lock ( writeLock )
+                lock ( readWriteLock )
                 {
 
                     Interface.Oxide.DataFileSystem.WriteObject( configuration.settings.pluginName, playerAutoKits );

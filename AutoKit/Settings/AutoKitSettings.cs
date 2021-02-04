@@ -3,7 +3,7 @@ namespace Oxide.Ext.AutoKit.Settings
     public sealed class AutoKitSettings
     {
         public const int DefaultCoolDown = 5;
-        public const int DefaultKitLimit = 5;
+        public const int DefaultKitLimit = 10;
         public const string DefaultChatPrefix = "[<color=yellow>{0}</color>]";
 
         public int coolDown { get; private set; }

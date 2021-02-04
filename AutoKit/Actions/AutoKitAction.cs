@@ -5,138 +5,148 @@ using Oxide.Ext.AutoKit.Settings;
 
 namespace Oxide.Ext.AutoKit.Actions
 {
-    public sealed class AutoKitAction<T> : IAutoKitActions<T>, IDisposable
+    public sealed class AutoKitAction<T> : IAutoKitAction<T>, IAutoKitDestructive<T>, IAutoKitNonDestructive<T>, IAutoKitNotify<T>, IDisposable
     {
         private AutoKitConfiguration<T> configuration { get; set; }
         private List<PlayerAutoKit<T>> playerAutoKits { get; set; }
+        private List<string> notifications { get; set; }
         private BasePlayer player { get; set; }
+        private Kit<T> kitForDestructiveAction { get; set; }
 
         public AutoKitAction( AutoKitConfiguration<T> configuration, BasePlayer player, List<PlayerAutoKit<T>> playerAutoKits )
         {
             this.configuration = configuration;
             this.player = player;
             this.playerAutoKits = playerAutoKits;
+            this.notifications = new List<string>();
         }
 
-        public void Apply( string kitName, Action<BasePlayer, Kit<T>> callBack )
+        public IAutoKitDestructive<T> WithKit( string kitName )
         {
-            if ( !CanProceed( kitName ) ) return;
-
             var kit = FindKit( kitName );
+            this.kitForDestructiveAction = kit;
 
             if ( null == kit )
+                WithNotification( configuration.messages.noKit, kitName );
+
+            return this;
+        }
+
+        public IAutoKitDestructive<T> WithNewKit( string kitName )
+        {
+            if ( null != FindKit( kitName ) )
+                WithNotification( configuration.messages.kitExists, kitName );
+
+            this.kitForDestructiveAction = new Kit<T> { name = kitName };
+
+            return this;
+        }
+
+        public IAutoKitNotify<T> Apply( Action<BasePlayer, Kit<T>> callBack )
+        {
+            return WithCoolDown().MaybeApply( callBack );
+        }
+
+        public IAutoKitNotify<T> Save( Func<BasePlayer, Kit<T>, Kit<T>> callBack )
+        {
+            return WithCoolDown().MaybeSave( callBack );
+        }
+
+        public IAutoKitNotify<T> Remove()
+        {
+            return WithCoolDown().MaybeRemove(); ;
+        }
+
+        public IAutoKitAction<T> List( Action<Kit<T>[]> callBack )
+        {
+            callBack( FindPlayerAutoKit().kits.ToArray() );
+            return this;
+        }
+
+        public IAutoKitNotify<T> ListToNotify()
+        {
+            FindPlayerAutoKit().kits.ForEach( kit => WithNotification( configuration.messages.list, kit.name ) );
+
+            return ToNotify();
+        }
+
+        public IAutoKitAction<T> WithNotification( string message, params object[] args )
+        {
+            notifications.Add( $"{string.Format( configuration.settings.chatPrefix, configuration.settings.pluginName )} {string.Format( message, args )}" );
+
+            return this;
+        }
+
+        public IAutoKitAction<T> Notify()
+        {
+            notifications.ForEach( player.ChatMessage );
+
+            return this;
+        }
+
+        public IAutoKitNotify<T> MaybeApply( Action<BasePlayer, Kit<T>> callBack )
+        {
+            if ( notifications.Count == 0 )
             {
-                Notify( configuration.messages.noKit, kitName );
-                return;
+                callBack( player, kitForDestructiveAction );
+                WithNotification( configuration.messages.applied, kitForDestructiveAction.name );
             }
 
-            callBack( player, kit );
-
-            Notify( configuration.messages.applied, kitName );
+            return this;
         }
 
-        public void Save( string kitName, Func<BasePlayer, string, Kit<T>> callBack )
+        public IAutoKitNotify<T> MaybeRemove()
         {
-
-            if ( !CanProceed( kitName ) ) return;
-
-            Remove( kitName );
-
-            if ( HasReachedKitLimit() ) return;
-
-            FindPlayerAutoKit().kits.Add( callBack( player, kitName ) );
-
-            Notify( configuration.messages.saved, kitName );
-        }
-
-        public void Remove( string kitName )
-        {
-            var kit = FindKit( kitName );
-
-            if ( null != kit )
+            if ( notifications.Count == 0 )
             {
-                playerAutoKits.Find( p => p.id == player.userID )?.kits?.Remove( kit );
-                Notify( configuration.messages.removed, kitName );
-            }
-        }
-
-        public void List()
-        {
-            playerAutoKits.Find( p => p.id == player.userID )?.kits?.ForEach( k => Notify( configuration.messages.list, k.name ) );
-        }
-
-        public void HasCoolDown( Action<bool> callBack )
-        {
-            long coolDown = 0;
-            if ( HasCoolDown( out coolDown ) )
-            {
-                callBack( true );
-                Notify( configuration.messages.coolDown, coolDown );
-                return;
-            }
-            callBack( false );
-        }
-
-        public void Notify( string message, params object[] args )
-        {
-            player.ChatMessage( $"{string.Format( configuration.settings.chatPrefix, configuration.settings.pluginName )} {string.Format( message, args )}" );
-        }
-
-        private bool CanProceed( string kitName )
-        {
-            long coolDown = 0;
-
-            if ( !IsKitNameValid( kitName ) )
-            {
-                Notify( configuration.messages.noKitName );
-                return false;
+                FindPlayerAutoKit().kits.Remove( kitForDestructiveAction );
+                WithNotification( configuration.messages.removed, kitForDestructiveAction.name );
             }
 
-            if ( HasCoolDown( out coolDown ) )
-            {
-                Notify( configuration.messages.coolDown, coolDown );
-                return false;
-            }
-
-            return true;
+            return this;
         }
 
-        private bool HasReachedKitLimit()
+        public IAutoKitNotify<T> MaybeSave( Func<BasePlayer, Kit<T>, Kit<T>> callBack )
         {
-            if ( FindPlayerAutoKit().kits?.Count >= configuration.settings.kitLimit )
+            if ( FindPlayerAutoKit().kits.Count >= configuration.settings.kitLimit )
+                WithNotification( configuration.messages.kitLimitReached, configuration.settings.kitLimit );
+
+            if ( notifications.Count == 0 )
             {
-                Notify( configuration.messages.kitLimitReached, configuration.settings.kitLimit );
-                return true;
+                FindPlayerAutoKit().kits.Add( callBack( player, kitForDestructiveAction ) );
+                WithNotification( configuration.messages.saved, kitForDestructiveAction.name );
             }
-            return false;
+
+            return this;
         }
 
-        private bool HasCoolDown( out long coolDown )
+        public IAutoKitNotify<T> ToNotify()
+        {
+            return this;
+        }
+
+        public IAutoKitNonDestructive<T> ToNonDestructive()
+        {
+            return this;
+        }
+
+        public IAutoKitDestructive<T> WithCoolDown()
         {
             var userId = player.userID;
             var commandTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             long lastCommandTime;
-            coolDown = 0;
 
             if ( configuration.playerCoolDowns.TryGetValue( userId, out lastCommandTime ) && commandTime - lastCommandTime < configuration.settings.coolDown )
-            {
-                coolDown = lastCommandTime + configuration.settings.coolDown - commandTime;
-                return true;
-            }
+                WithNotification( configuration.messages.coolDown, lastCommandTime + configuration.settings.coolDown - commandTime );
 
             configuration.playerCoolDowns[userId] = commandTime;
 
-            return false;
-        }
-
-        private bool IsKitNameValid( string kitName )
-        {
-            return !string.IsNullOrEmpty( kitName );
+            return this;
         }
 
         private Kit<T> FindKit( string kitName )
         {
-            return playerAutoKits.Find( p => p.id == player.userID )?.kits?.Find( s => s.name == kitName );
+            return FindPlayerAutoKit().kits.Find( s => s.name == kitName );
         }
 
         private PlayerAutoKit<T> FindPlayerAutoKit()

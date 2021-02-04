@@ -4,7 +4,7 @@ namespace Oxide.Ext.AutoKit.Messages
     {
         public string saved { get; set; } = "You have saved: <color=green>{0}</color>.";
         public string removed { get; set; } = "You have removed: <color=green>{0}</color>.";
-        public string noKitName { get; set; } = "You must supply a kit name.";
+        public string kitExists { get; set; } = "You already have a kit named: <color=green>{0}</color>";
         public string noKit { get; set; } = "You don't have a kit named: <color=green>{0}</color> ";
         public string applied { get; set; } = "Your kit <color=green>{0}</color> has been applied";
         public string list { get; set; } = "Kit: <color=green>{0}</color>";

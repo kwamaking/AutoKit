@@ -4,8 +4,8 @@ namespace Oxide.Ext.AutoKit.Messages
     {
         string saved { get; set; }
         string removed { get; set; }
-        string noKitName { get; set; }
         string noKit { get; set; }
+        string kitExists { get; set; }
         string applied { get; set; }
         string list { get; set; }
         string coolDown { get; set; }
