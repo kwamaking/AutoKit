@@ -137,7 +137,10 @@ namespace Oxide.Ext.AutoKit.Actions
             long lastCommandTime;
 
             if ( configuration.playerCoolDowns.TryGetValue( userId, out lastCommandTime ) && commandTime - lastCommandTime < configuration.settings.coolDown )
+            {
                 WithNotification( configuration.messages.coolDown, lastCommandTime + configuration.settings.coolDown - commandTime );
+                return this;
+            }
 
             configuration.playerCoolDowns[userId] = commandTime;
 
