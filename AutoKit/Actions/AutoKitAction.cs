@@ -79,7 +79,7 @@ namespace Oxide.Ext.AutoKit.Actions
 
         public IAutoKitAction<T> Notify()
         {
-            notifications.ForEach( player.ChatMessage );
+            notifications.ForEach( n => player.SendConsoleCommand( "chat.add", 2, configuration.settings.iconId, n ) );
 
             return this;
         }
